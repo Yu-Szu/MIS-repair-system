@@ -66,3 +66,16 @@ th { background: #f5f8fc; white-space: nowrap; }
   .container { padding: 28px 14px; }
   .panel { padding: 18px; }
 }
+
+/* 【新增】提示文字都用灰色，這樣才分得出來哪些是提示、哪些是使用者自己選的 */
+input::placeholder, textarea::placeholder { color: #757575; }
+
+/* 下拉選單還停在提示文字（還沒選）的時候是灰色，選了之後就變回一般的顏色 */
+select:required:invalid { color: #757575; }
+
+/* 選單展開之後，選項維持一般的深色，只有提示文字那一項是灰色 */
+select option { color: #202124; }
+select option:disabled { color: #757575; }
+
+/* 【新增】輸入欄位下方的紅字提示（例如電話打了英文字母時），用比較明顯的紅色 */
+.field-hint { color: #d92d20; font-size: 14px; font-weight: 500; }

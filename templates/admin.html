@@ -1,4 +1,14 @@
 <!doctype html>
+<!--
+  案件管理後台（管理者用）
+
+  這次新增的部分：
+  1. 「可預約維修時段」區塊：管理者選好日期和時段，就能新增。
+     時段選單裡的「一次新增半天」是方便用的功能（一個一個新增太花時間），
+     實際新增的動作是 admin.js 做的。
+  2. 案件表格多了「預約時段」、「報修人」、「電話」三個欄位。
+     後台看得到完整的姓名和電話，前台（index.html）只看得到遮蔽過的姓名。
+-->
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
@@ -14,8 +24,74 @@
           <a class="admin-link" href="/">回報修頁面</a>
         </div>
         <h1>案件管理後台</h1>
-        <p>管理員可檢視報修案件，並更新處理狀態。</p>
+        <p>管理員可檢視報修案件、更新處理狀態，並開放可預約的維修時段。</p>
       </header>
+
+      <!-- 【新增】可預約時段管理：管理者要先在這裡開放時段，報修的人才選得到 -->
+      <section class="panel" aria-labelledby="slot-title">
+        <div class="section-heading">
+          <h2 id="slot-title">可預約維修時段</h2>
+          <button id="slot-refresh-button" class="secondary" type="button">重新整理</button>
+        </div>
+
+        <form id="slot-form">
+          <label>
+            日期
+            <!--
+              平常是一般的文字框，空白的時候顯示我們自己寫的提示文字「年/月/日」；
+              使用者點下去，admin.js 才會換成日期選擇器。
+              （如果一開始就用 type="date"，空白時瀏覽器會自己顯示「yyyy/月/dd」，
+              英文和中文混在一起，而且網頁沒辦法改它。）
+            -->
+            <input id="slot-date" name="date" type="text" placeholder="年/月/日" required />
+          </label>
+          <label>
+            時段
+            <!--
+              每個時段 1 小時，服務時間是 08:00～18:00。
+              單一時段的 value 是「開始時間」，會直接送給後端。
+              「整個上午／整個下午」的 value（morning、afternoon）不會送給後端，
+              admin.js 會先把它拆成一個一個單一時段，再送出去。
+            -->
+            <select id="slot-period" name="period" required>
+              <!-- 一開始顯示提示文字（不能被選），要管理者自己選，不預設任何時段 -->
+              <option value="" disabled selected>請選擇可開放的預約時段</option>
+              <optgroup label="一次新增半天">
+                <option value="morning">整個上午（08:00–12:00，共 4 個時段）</option>
+                <option value="afternoon">整個下午（12:00–18:00，共 6 個時段）</option>
+              </optgroup>
+              <optgroup label="單一時段（每小時一個）">
+                <option value="08:00">08:00–09:00</option>
+                <option value="09:00">09:00–10:00</option>
+                <option value="10:00">10:00–11:00</option>
+                <option value="11:00">11:00–12:00</option>
+                <option value="12:00">12:00–13:00</option>
+                <option value="13:00">13:00–14:00</option>
+                <option value="14:00">14:00–15:00</option>
+                <option value="15:00">15:00–16:00</option>
+                <option value="16:00">16:00–17:00</option>
+                <option value="17:00">17:00–18:00</option>
+              </optgroup>
+            </select>
+          </label>
+          <button type="submit">新增時段</button>
+        </form>
+
+        <p id="slot-message" class="message" aria-live="polite"></p>
+        <p id="slot-empty-state">目前尚未開放任何時段。</p>
+        <div class="table-wrap">
+          <table id="slot-table" hidden>
+            <thead>
+              <tr>
+                <th>時段</th>
+                <th>狀態</th>
+                <th>預約案件</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
 
       <section class="panel" aria-labelledby="admin-list-title">
         <div class="section-heading">
@@ -30,7 +106,9 @@
               <tr>
                 <th>編號</th>
                 <th>地點／設備</th>
-                <th>聯絡方式</th>
+                <th>預約時段</th>
+                <th>報修人</th>
+                <th>電話</th>
                 <th>問題描述</th>
                 <th>建立時間</th>
                 <th>處理狀態</th>

@@ -1,4 +1,16 @@
 <!doctype html>
+<!--
+  報修頁面（報修的人用）
+
+  這次新增的部分：
+  1. 「報修人姓名」和「聯絡電話」分開填（原本是合在一起的「聯絡方式」），兩個都要填。
+     之後取消報修的時候，要用電話來證明「這張單是我的」。
+  2. 「預約維修時段」的下拉選單。選項是 app.js 跟後端要來的，
+     只會列出還沒被預約、離開始至少 1 小時的時段。
+  3. 緊急程度和時段的選單，一開始都顯示提示文字，要使用者自己選。
+  4. 案件清單改成顯示「報修人」（遮蔽過的姓名）和「預約時段」，
+     還能取消的案件旁邊會有「取消報修」按鈕。
+-->
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
@@ -28,23 +40,51 @@
             設備
             <input name="equipment" placeholder="例如：投影機" required />
           </label>
+          <!-- 【修改】選單一開始顯示提示文字（不能被選），要使用者自己選，不再預設「一般」 -->
           <label>
             緊急程度
-            <select name="urgency">
+            <select name="urgency" required>
+              <option value="" disabled selected>請選擇緊急程度</option>
               <option value="一般">一般</option>
               <option value="急件">急件</option>
               <option value="緊急">緊急</option>
             </select>
           </label>
+          <!-- 【修改】原本只有一個「聯絡方式」欄位，現在拆成姓名和電話 -->
           <label>
-            聯絡方式
-            <input name="contact" placeholder="例如：王小明／0912-345-678" required />
+            報修人姓名
+            <!-- 防呆：只能輸入文字，不能有數字和特殊符號。檢查的程式寫在 app.js。
+                 打了不合規定的內容時，欄位不會擋著不讓打，而是在下面顯示紅字提示 -->
+            <input id="name-input" name="name" placeholder="例如：王小明" required />
+            <span id="name-hint" class="field-hint" aria-live="polite" hidden></span>
+          </label>
+          <label>
+            聯絡電話
+            <!-- 防呆：只能輸入數字，數字中間可以放「-」或空格（不限幾碼）。檢查的程式寫在 app.js。
+                 打了不合規定的內容時，欄位不會擋著不讓打，而是在下面顯示紅字提示 -->
+            <input id="phone-input" name="phone" type="tel" placeholder="例如：0912-345-678（取消報修時需要輸入）" required />
+            <span id="phone-hint" class="field-hint" aria-live="polite" hidden></span>
+          </label>
+          <!--
+            【新增】預約維修時段。
+            一開始顯示提示文字「請選擇欲預約的維修時段」（disabled，所以不能被選），
+            而且設了 required，使用者一定要自己選一項才能送出，不會被偷偷預設成某個時段。
+            「不指定時段」是使用者可以自己選的選項（value 是 none，
+            app.js 送出的時候會換成空字串，後端就知道是「不預約」）。
+            其他的時段選項，是 app.js 的 loadSlots() 跟 /api/slots 要來之後再放進去的。
+          -->
+          <label>
+            預約維修時段
+            <select id="slot-select" name="slot_id" required>
+              <option value="" disabled selected>請選擇欲預約的維修時段</option>
+              <option value="none">不指定時段</option>
+            </select>
           </label>
           <label>
             問題描述
             <textarea name="description" rows="4" placeholder="請描述故障情況" required></textarea>
           </label>
-          <button type="submit">送出報修</button>
+          <button id="submit-button" type="submit">送出報修</button>
         </form>
         <p id="message" class="message" aria-live="polite"></p>
       </section>
@@ -63,10 +103,13 @@
                 <th>地點</th>
                 <th>設備</th>
                 <th>緊急程度</th>
-                <th>聯絡方式</th>
+                <!-- 【修改】原本是「聯絡方式」，現在只顯示遮蔽過的姓名，不顯示電話 -->
+                <th>報修人</th>
+                <th>預約時段</th>
                 <th>狀態</th>
                 <th>問題描述</th>
                 <th>建立時間</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody></tbody>
